@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Mikroengine - Config</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <link rel="stylesheet" type="text/css" href="style.css" />
+    </head>
+    <body>
+        <h2>Config</h2>
+        <p>The config class allows the developer to load variable from config files to be used in the aplication.</p>
+        <p>It is a core class so you don't need to load it manually.</p>
+        
+        <h3>Loading Files</h3>
+        <p>The configuration files are located in the config folder in the root path.</p>
+        <p>The folowing example will load the file config/myfile.php</p>
+        <pre>$this->config->load('myfile');</pre>
+        <p class="warning">Beware: config variables are rewritten if they have the same name.</p>
+        
+        <h3>Getting Values</h3>
+        <p>To get a value from the config you need to use the get method.</p>
+        <pre>$this->config->get('myvar');</pre>
+        
+        <h3>Setting Values</h3>
+        <p>These values are temporal. They will not be stored in any way, just replace the actual value.</p>
+        <pre>$this->config->set('myvar', 'myvalue');</pre>
+    </body>
+</html>
