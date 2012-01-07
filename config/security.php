@@ -6,6 +6,9 @@ $config['csrf_token'] = 'csrf_token';
 $config['csrf_life'] = 900; // 15 minutes
 $config['csrf_ips'] = array();
 
+// Ignore csrf check for the listed uris.
+$config['csrf_uris'] = array();
+
 // Captcha.
 $config['captcha_url'] = 'http://localhost/mikroengine/data/captcha/';
 

@@ -65,14 +65,16 @@ class Security {
      */
     public function check_csrf(){
         
+        // Check if we have to ignore the csrf.
         $ips = $this->config->get('csrf_ips');
-        if(is_array($ips)){
-            foreach($ips as $ip){
-                $viewer = $this->input->ip();
-                if($ip == $viewer){
-                    return true;
-                }
-            }
+        if(is_array($ips) && in_array($this->input->ip(), $ips)){
+            return true;
+        }
+        
+        // Check if we have to ignore the csrf.
+        $uris = $this->config->get('csrf_uris');
+        if(is_array($uris) && in_array($this->uri->path(), $uris)){
+            return true;
         }
         
         $name = $this->config->get('csrf_token');
