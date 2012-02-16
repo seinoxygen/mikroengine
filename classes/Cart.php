@@ -44,11 +44,11 @@ class Cart {
         if(is_array($item)){
             foreach($item as $subitem){
                 if(!is_array($subitem)){
-                    $item['uid'] = sha1(serialize($item['options']));
+                    $item['uid'] = sha1($item['id'].serialize($item['options']));
                     array_push($this->items, $item);
                 }
                 else{
-                    $item['uid'] = sha1(serialize($item['options']));
+                    $subitem['uid'] = sha1($subitem['id'].serialize($subitem['options']));
                     array_push($this->items, $subitem);
                 }
             }
