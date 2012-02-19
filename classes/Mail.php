@@ -32,20 +32,30 @@ class Mail {
     public $timeout = 60;
     
     private $newline = "\r\n";
-    private $charset = "UTF-8";
+    private $charset = "utf-8";
     
-    private $format = "plain";
+    public $format = "plain";
     
     public $username;
     public $password;
     
+    private $headers;
+    
     private $from;
-    private $to;
-    private $cc;
-    private $bcc;
+    private $to = array();
+    private $cc = array();
+    private $bcc = array();
+    
+    public $priority = 3;
     
     public $subject;
+    public $message = "";
     
+    private $boundary;
+    private $attachments;
+    
+    public $debug = array();
+        
     public function __construct($server = null, $port = 25, $username = null, $password = null){
         if(!is_null($server)){
             $this->server = $server;
@@ -59,12 +69,24 @@ class Mail {
         
     }
     
-    public function from($email){
-
+    public function from($email, $name = null){
+        if(is_null($name)){
+            $from = "<$email>";
+        }
+        else{
+            $from = "$name <$email>";
+        }
+        $this->from = $from;
+        $this->headers['From'] = $from;
     }
     
     public function reply_to($email){
-        
+        if(is_null($name)){
+            $this->headers['Reply-To'] = "<$email>";
+        }
+        else{
+            $this->headers['Reply-To'] = "$name <$email>";
+        }
     }
     
     public function to($email){
@@ -74,6 +96,7 @@ class Mail {
         else{
             array_push($this->to, $email);
         }
+        $this->headers['To'] = "<".implode(', ', $this->to).">";
     }
     
     public function cc($email){
@@ -99,100 +122,237 @@ class Mail {
     }
     
     public function attach($file){
-        
+        if(file_exists($file)){
+            switch ($this->format) {
+                case 'plain':
+                case 'plain-attach':
+                    $this->format = 'plain-attach';
+                    break;
+                case 'html':
+                case 'html-attach':
+                    $this->format = 'html-attach';
+                    break;
+                default:
+                    $this->format = 'plain';
+                    break;
+            }
+            
+            $this->attachments[] = $file;
+        }
     }
     
     public function message($message){
-        
+        $this->message = $message;
     }
     
-    public function html($message){
+    private function date() {
+        $diff_second = date("Z");
+        if ($diff_second > 0){
+            $sign = "+";
+        }
+        else{
+            $sign = "-";
+        }
+
+        $diff_second = abs($diff_second);
+
+        $diff_hour = floor($diff_second / 3600);
+        $diff_minute = floor(($diff_second - 3600 * $diff_hour) / 60);
+
+        $zonename = "(" . strftime("%Z") . ")";
+        $result = sprintf("%s%02d%02d %s", $sign, $diff_hour, $diff_minute, $zonename);
+
+        return date("D, j M Y H:i:s ", time()) . $result;
+    }
+    
+    private function boundary(){
+        if(!empty($this->boundary)){
+            return $this->boundary;
+        }
+        $this->boundary = strtoupper(sha1(time()));
+        return $this->boundary;
+    }
+    
+    private function compile_headers(){
+        $headers = "";    
+        $headers .= "X-Mailer: Mikroengine". $this->newline; 
+        $headers .= "X-Priority: " .$this->priority. $this->newline;
         
+        $headers .= "Date: " . $this->date() . $this->newline;     
+        $headers .= "Subject: " . $this->subject . $this->newline;
+                
+        foreach ($this->headers as $key => $val) {
+            $headers .= $key . ": " . $val . $this->newline;
+        }
+        
+        $headers .= "MIME-Version: 1.0" . $this->newline;
+        
+        switch ($this->format){
+            case 'plain':
+                echo "ingreso a ".$this->format."<br>";
+                $headers .= "Content-Type: text/plain; charset=" . $this->charset . $this->newline;
+                $headers .= "Content-Transfer-Encoding: 8bit" . $this->newline;
+                break;
+            
+            case 'plain-attach':
+                echo "ingreso a ".$this->format."<br>";
+                $headers .= "Content-Type: multipart/mixed; boundary=\"" . $this->boundary() . "\"" . $this->newline;
+                break;
+            
+            case 'html':
+                echo "ingreso a ".$this->format."<br>";
+                $headers .= "Content-Type: text/html; charset=" . $this->charset . $this->newline;
+		$headers .= "Content-Transfer-Encoding: quoted-printable" . $this->newline;
+                break;
+        }
+                
+        return $headers;
+    }
+    
+    private function compile_message(){
+        
+        $headers = $this->compile_headers();
+
+        if(count($this->attachments) > 0){
+            $message = $headers . $this->newline;
+            $message .= "--" . $this->boundary() . $this->newline;
+            
+            $message .= "Content-Type: text/plain; charset=" . $this->charset . $this->newline;
+            $message .= "Content-Transfer-Encoding: 8bit" . $this->newline.$this->newline;
+            $message .= preg_replace('/^\./m', '..$1', $this->message) . $this->newline;
+                        
+            foreach($this->attachments as $attachment){
+                $file = pathinfo($attachment);
+                if ($file['extension'] == ""){
+                    $filetype = "application/octet-stream";
+                }
+                else{
+                    $filetype = $this->mime($file['extension']);
+                }
+                $name = basename($attachment);
+
+                $message .= $this->newline."--".$this->boundary() . $this->newline;
+                $message .= "Content-Type: $filetype" . $this->newline;
+                $message .= "Content-Transfer-Encoding: base64" . $this->newline;
+                $message .= "Content-Disposition: attachment; filename=\"$name\"" . $this->newline . $this->newline;
+
+                $file = fopen($attachment, "r");
+                while ($tmp = fread($file, 570)) {
+                    $message .= chunk_split(base64_encode($tmp));
+                }
+                fclose($file);
+            }
+
+            $message .= $this->newline . "--" . $this->boundary() . "--" . $this->newline;
+
+            return  $message;
+        }
+        else{
+            return  $headers . $this->newline . preg_replace('/^\./m', '..$1', $this->message);
+        }
+    }
+    
+    private function send_data($data, $nls = 1){
+        $newlines = "";
+        for ($i = 0; $i < $nls; $i++) {
+            $newlines .= $this->newline;
+        }
+        
+        fwrite($this->connection, $data . $newlines);
+    }
+    
+    public function send_command($command, $nls = 1, $expected = null){
+        
+        $newlines = "";
+        for ($i = 0; $i < $nls; $i++) {
+            $newlines .= $this->newline;
+        }
+
+        fwrite($this->connection, $command . $newlines);
+
+        $this->debug[] = "Cmd: ".htmlentities($command); 
+        
+        if($command == "QUIT"){
+            return;
+        }        
+        
+        return $this->response();
+    }
+    
+    public function response(){
+        $data = fread($this->connection, 512);
+        $this->debug[] = $data; 
+        return $data;
     }
         
     public function send(){
         $success = false;
-        $this->connection = fsockopen($this->server, $this->port, null, null, $this->timeout);
+
+        $this->connection = fsockopen($this->server, $this->port, $errno, $errstr, $this->timeout);
+        $this->response();
         
-        fputs($this->connection, 'AUTH LOGIN' . $this->newline);
-        fputs($this->connection, base64_encode($username) . $this->newline);
-        fputs($this->connection, base64_encode($password) . $this->newline);
-        fputs($this->connection, 'HELO ' . $localhost . $this->newline);
-        fputs($this->connection, 'MAIL FROM: ' . $this->from . $this->newline);
+        $this->send_command('EHLO '.$this->server);
+
+        $this->send_command('AUTH LOGIN');
+        
+        $this->send_command(base64_encode($this->username));
+        
+        $this->send_command(base64_encode($this->password));
+                
+        if(!empty($this->from)){
+            $this->send_command('MAIL FROM: ' . $this->from);
+        }
         
         if(!empty($this->to)){
             foreach($this->to as $to){
-                fputs($this->connection, 'RCPT TO: ' . $to . $this->newline);
+                $this->send_command('RCPT TO: ' . $to);
             }
         }
         
         if(!empty($this->cc)){
             foreach($this->cc as $cc){
-                fputs($smtpConnect, 'RCPT TO: ' . $cc . $this->newline);
+                $this->send_command('RCPT TO: ' . $cc);
             }
         }
-
-        if (!empty($this->bcc)) {
+        
+        if(!empty($this->bcc)){
             foreach($this->bcc as $bcc){
-                fputs($smtpConnect, 'RCPT TO: ' . $bcc . $this->newline);
+                $this->send_command('RCPT TO: ' . $bcc);
             }
-        }
+        }       
 
-        fputs($this->connection, 'DATA' . $this->newline);
+        $this->send_command('DATA');
+                                                           
+        $this->send_data($this->compile_message(),0);
+        
+        $response = $this->send_command($this->newline.'.'.$this->newline);
 
-        flush($this->connection);
-                
-        fputs($this->connection, 'To:     ' . $this->to . $this->newline);
-        fputs($this->connection, 'From:   ' . $this->from . $this->newline);
-        fputs($this->connection, 'Subject:' . $this->subject . $this->newline);
-
-        if($this->format != "html"){
-            $headers = "Content-Type: text/plain; charset=\"".$this->charset."\"" . $this->newline;
-            $headers .= "Content-Transfer-Encoding: 8bit" . $this->newline;
-
-            $message = $this->bodyText();
-
-            fputs($this->connection, $headers . $this->newline . $this->newline);
-            fputs($this->connection, $message . $this->newline . '.' . $this->newline);
-        }
-        else{
-            $random = md5(time());
-
-            $headers = "Content-Type: multipart/alternative; boundary=\"--" . $random . "\"".$this->newline;
-            $headers .= "--" . $random . $this->newline;
-            $headers .= "Content-Type: text/plain; charset=\"".$this->charset."\"" . $this->newline;
-            $headers .= "Content-Transfer-Encoding: 8bit" . $this->newline;
-
-            $message = $this->bodyText();
-
-            fputs($this->connection, $headers . $this->newline);
-            fputs($this->connection, $message . $this->newline);
-
-            $headers = "--" . $random . $this->newline;
-            $headers .= "Content-Type: text/html; charset=\"".$this->charset."\"" . $this->newline;
-            $headers .= "Content-Transfer-Encoding: 8bit" . $this->newline;
-
-            $message = $this->bodyHtml();
-
-            fputs($this->connection, $headers . $this->newline);
-            fputs($this->connection, $message . $this->newline);
-
-            $headers = "--" . $random . "--".$this->newline;
-
-            fputs($this->connection, $headers . '.' . $this->newline);
+        if(substr($response, 0, 3) == 250){
+            $success = true;
         }
         
-        $response = fgets($this->connection, 1024);
-
-        if(preg_match('/^\d+$/', $response, $match)){
-            if($match[0] == 250){
-                $success = true;
-            }
-        }
-        
-        fputs($this->connection, 'QUIT' . $this->newline);
-        
+        $this->send_command('QUIT');
+        fclose($this->connection);
+                        
         return $success;
+    }
+    
+    public function debug(){
+        return $this->debug;
+    }
+    
+    public function mime($ext){
+        $mime = array(
+            'bmp' => 'image/bmp',
+            'gif' => 'image/gif',
+            'jpeg' => 'image/jpeg',
+            'jpg' => 'image/jpeg',
+            'jpe' => 'image/jpeg',
+            'png' => 'image/png',
+            'tiff' => 'image/tiff',
+            'tif' => 'image/tiff',
+        );
+        return $mime[strtolower($ext)];
     }
 }
 // END Mail Class
