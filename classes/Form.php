@@ -2,7 +2,7 @@
 
 /**
  * @package		Mikroengine
- * @author		Mikrobytes Dev Team
+ * @author		Keovi Dev Team
  * @copyright           Copyright (c) 2011 - 2011, Mikrobytes.
  * @license
  * @link
@@ -18,7 +18,7 @@
  * @package		Mikroengine
  * @subpackage          Libraries
  * @category            Form
- * @author		Mikrobytes Dev Team
+ * @author		Keovi Dev Team
  */
 
 // ------------------------------------------------------------------------
