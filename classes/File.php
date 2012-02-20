@@ -23,20 +23,57 @@
 
 class File {
     
-    public function download($file, $name = null){
-        $type = filetype($file);
-
-        // Send file headers
-        header("Content-type: $type");
-        header("Content-Disposition: attachment;filename=$name");
-        header("Content-Transfer-Encoding: binary");
-        header('Pragma: no-cache');
-        header('Expires: 0');
-        // Send the file contents.
-        set_time_limit(0);
-        readfile($file);
+    private $mime;
+    
+    public function __construct() {
+        $ME = &get_instance();
+        $ME->load->library('Mime');
+        $this->mime = $ME->mime;
     }
     
+    /**
+     * Output the file content to the browser. 
+     * Speed must be provided in kb/s.
+     * 
+     * @param string $file
+     * @param string $name
+     * @param decimal $speed 
+     */
+    public function download($file, $name = null, $speed = null){
+        $info = pathinfo($file);
+        $mime = $this->mime->get_mime($info['extension']);
+        
+        if(is_null($name)){
+            $name = basename($file);
+        }
+
+        set_time_limit(0);
+        
+        // Send file headers
+        header("Content-type: $mime");
+        header("Content-Disposition: attachment; filename=$name");
+        header("Content-Transfer-Encoding: binary");
+        header("Content-Length: ".filesize($file));
+        
+        // Send the file contents.
+        if(is_null($speed)){
+            readfile($file);
+        }
+        else{
+            flush();
+            $stream = fopen($file, "r");
+
+            // Send the file in chunks
+            while (!feof($stream)) {
+                print fread($file, round($speed * 1024));
+                flush();
+                sleep(1);
+            }
+
+            // Close the stream
+            fclose($file);
+        }       
+    }
 }
 // END File Class
 
