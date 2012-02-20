@@ -342,7 +342,7 @@ class Mail {
      * @return string 
      */
     private function send_command($command, $nls = 1){
-        $this->send_data($data, $nls);
+        $this->send_data($command, $nls);
 
         $this->debug[] = "Cmd: ".htmlentities($command); 
         
