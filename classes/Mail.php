@@ -2,7 +2,7 @@
 
 /**
  * @package		Mikroengine
- * @author		Mikrobytes Dev Team
+ * @author		Keovi Dev Team
  * @copyright           Copyright (c) 2011 - 2011, Mikrobytes.
  * @license
  * @link		
@@ -18,14 +18,14 @@
  * @package		Mikroengine
  * @subpackage          Libraries
  * @category            Mail
- * @author		Mikrobytes Dev Team
+ * @author		Keovi Dev Team
  */
 
 // ------------------------------------------------------------------------
 
 class Mail {
     
-    private $connection;
+    protected $connection;
     
     public $server;
     public $port = 25;
@@ -52,23 +52,36 @@ class Mail {
     public $message = "";
     
     private $boundary;
-    private $attachments;
+    private $attachments = array();
     
     public $debug = array();
+    
+    private $config;
+    private $mime;
         
-    public function __construct($server = null, $port = 25, $username = null, $password = null){
-        if(!is_null($server)){
-            $this->server = $server;
-            $this->port = $port;
-            $this->username = $username;
-            $this->password = $password;
-        }
+    public function __construct(){
+        $ME = &get_instance();
+        $ME->load->library('Mime');
+        $this->config = $ME->config;
+        $this->mime = $ME->mime;
     }
     
     public function initialize($config = array()){
-        
+        if(!empty($config)){
+            foreach ($config as $key => $value) {
+                if(!empty($value)){
+                    $this->config->set($key, $value);
+                }
+            }
+        }
     }
     
+    /**
+     * Set the from email
+     * 
+     * @param string $email
+     * @param string $name 
+     */
     public function from($email, $name = null){
         if(is_null($name)){
             $from = "<$email>";
@@ -80,6 +93,11 @@ class Mail {
         $this->headers['From'] = $from;
     }
     
+    /**
+     * Set the reply to email
+     * 
+     * @param string $email 
+     */
     public function reply_to($email){
         if(is_null($name)){
             $this->headers['Reply-To'] = "<$email>";
@@ -89,6 +107,11 @@ class Mail {
         }
     }
     
+    /**
+     * Set the receipments
+     * 
+     * @param string $email 
+     */
     public function to($email){
         if(is_array($email)){
             $this->to = array_merge($this->to, $email);
@@ -99,6 +122,11 @@ class Mail {
         $this->headers['To'] = "<".implode(', ', $this->to).">";
     }
     
+    /**
+     * Adds cc
+     * 
+     * @param string $email
+     */
     public function cc($email){
         if(is_array($email)){
             $this->cc = array_merge($this->cc, $email);
@@ -108,6 +136,11 @@ class Mail {
         }
     }
     
+    /**
+     * Adds bcc
+     * 
+     * @param string $email
+     */
     public function bcc($email){
         if(is_array($email)){
             $this->bcc = array_merge($this->bcc, $email);
@@ -117,10 +150,22 @@ class Mail {
         }
     }
     
+    /**
+     * Set the subject
+     * 
+     * @param string $subject 
+     */
     public function subject($subject){
         $this->subject = $subject;
     }
     
+    /**
+     * Attachs a file to be send.
+     * Returns true if file exists and was attached, false if not.
+     * 
+     * @param string $file
+     * @return boolean 
+     */
     public function attach($file){
         if(file_exists($file)){
             switch ($this->format) {
@@ -138,13 +183,25 @@ class Mail {
             }
             
             $this->attachments[] = $file;
+            return true;
         }
+        return false;
     }
     
+    /**
+     * Set the message
+     * 
+     * @param string $message 
+     */
     public function message($message){
         $this->message = $message;
     }
     
+    /**
+     * Set RFC 822 Date
+     *
+     * @return	string
+     */
     private function date() {
         $diff_second = date("Z");
         if ($diff_second > 0){
@@ -165,6 +222,11 @@ class Mail {
         return date("D, j M Y H:i:s ", time()) . $result;
     }
     
+    /**
+     * Return the boundary or generate one
+     * 
+     * @return type 
+     */
     private function boundary(){
         if(!empty($this->boundary)){
             return $this->boundary;
@@ -173,6 +235,11 @@ class Mail {
         return $this->boundary;
     }
     
+    /**
+     * Compile the headers depending of the message format
+     * 
+     * @return string 
+     */
     private function compile_headers(){
         $headers = "";    
         $headers .= "X-Mailer: Mikroengine". $this->newline; 
@@ -189,18 +256,15 @@ class Mail {
         
         switch ($this->format){
             case 'plain':
-                echo "ingreso a ".$this->format."<br>";
                 $headers .= "Content-Type: text/plain; charset=" . $this->charset . $this->newline;
                 $headers .= "Content-Transfer-Encoding: 8bit" . $this->newline;
                 break;
             
             case 'plain-attach':
-                echo "ingreso a ".$this->format."<br>";
                 $headers .= "Content-Type: multipart/mixed; boundary=\"" . $this->boundary() . "\"" . $this->newline;
                 break;
             
             case 'html':
-                echo "ingreso a ".$this->format."<br>";
                 $headers .= "Content-Type: text/html; charset=" . $this->charset . $this->newline;
 		$headers .= "Content-Transfer-Encoding: quoted-printable" . $this->newline;
                 break;
@@ -209,66 +273,76 @@ class Mail {
         return $headers;
     }
     
+    /**
+     * Build the message body and add atachments
+     * 
+     * @return string
+     */
     private function compile_message(){
         
         $headers = $this->compile_headers();
 
-        if(count($this->attachments) > 0){
-            $message = $headers . $this->newline;
-            $message .= "--" . $this->boundary() . $this->newline;
-            
-            $message .= "Content-Type: text/plain; charset=" . $this->charset . $this->newline;
-            $message .= "Content-Transfer-Encoding: 8bit" . $this->newline.$this->newline;
-            $message .= preg_replace('/^\./m', '..$1', $this->message) . $this->newline;
-                        
-            foreach($this->attachments as $attachment){
-                $file = pathinfo($attachment);
-                if ($file['extension'] == ""){
-                    $filetype = "application/octet-stream";
+        switch ($this->format) {
+            case 'plain':
+                return $headers . $this->newline . preg_replace('/^\./m', '..$1', $this->message);
+                break;
+
+            case 'plain-attach':
+                $message = $headers . $this->newline;
+                $message .= "--" . $this->boundary() . $this->newline;
+
+                $message .= "Content-Type: text/plain; charset=" . $this->charset . $this->newline;
+                $message .= "Content-Transfer-Encoding: 8bit" . $this->newline . $this->newline;
+                $message .= preg_replace('/^\./m', '..$1', $this->message) . $this->newline;
+
+                foreach ($this->attachments as $attachment) {
+                    $file = pathinfo($attachment);
+                    $mime = $this->mime->get_mime($file['extension']);
+                    $name = basename($attachment);
+
+                    $message .= $this->newline . "--" . $this->boundary() . $this->newline;
+                    $message .= "Content-Type: $mime" . $this->newline;
+                    $message .= "Content-Transfer-Encoding: base64" . $this->newline;
+                    $message .= "Content-Disposition: attachment; filename=\"$name\"" . $this->newline . $this->newline;
+
+                    $file = fopen($attachment, "r");
+                    while ($tmp = fread($file, 570)) {
+                        $message .= chunk_split(base64_encode($tmp));
+                    }
+                    fclose($file);
                 }
-                else{
-                    $filetype = $this->mime($file['extension']);
-                }
-                $name = basename($attachment);
+                return $message . $this->newline . "--" . $this->boundary() . "--" . $this->newline;
+                break;
 
-                $message .= $this->newline."--".$this->boundary() . $this->newline;
-                $message .= "Content-Type: $filetype" . $this->newline;
-                $message .= "Content-Transfer-Encoding: base64" . $this->newline;
-                $message .= "Content-Disposition: attachment; filename=\"$name\"" . $this->newline . $this->newline;
-
-                $file = fopen($attachment, "r");
-                while ($tmp = fread($file, 570)) {
-                    $message .= chunk_split(base64_encode($tmp));
-                }
-                fclose($file);
-            }
-
-            $message .= $this->newline . "--" . $this->boundary() . "--" . $this->newline;
-
-            return  $message;
-        }
-        else{
-            return  $headers . $this->newline . preg_replace('/^\./m', '..$1', $this->message);
+            case 'html':
+                return $headers . $this->newline . preg_replace('/^\./m', '..$1', $this->message);
+                break;
         }
     }
     
+    /**
+     * Send data to the smtp server
+     * 
+     * @param string $data
+     * @param integer $nls 
+     */
     private function send_data($data, $nls = 1){
         $newlines = "";
         for ($i = 0; $i < $nls; $i++) {
             $newlines .= $this->newline;
         }
-        
         fwrite($this->connection, $data . $newlines);
     }
     
-    public function send_command($command, $nls = 1, $expected = null){
-        
-        $newlines = "";
-        for ($i = 0; $i < $nls; $i++) {
-            $newlines .= $this->newline;
-        }
-
-        fwrite($this->connection, $command . $newlines);
+    /**
+     * Send a command to the smtp server
+     * 
+     * @param string $command
+     * @param integer $nls
+     * @return string 
+     */
+    private function send_command($command, $nls = 1){
+        $this->send_data($data, $nls);
 
         $this->debug[] = "Cmd: ".htmlentities($command); 
         
@@ -279,12 +353,23 @@ class Mail {
         return $this->response();
     }
     
+    /**
+     * Get the response from server
+     * 
+     * @return string 
+     */
     public function response(){
         $data = fread($this->connection, 512);
         $this->debug[] = $data; 
         return $data;
     }
         
+    /**
+     * Send the email
+     * Return true on success
+     * 
+     * @return boolean 
+     */
     public function send(){
         $success = false;
 
@@ -337,22 +422,13 @@ class Mail {
         return $success;
     }
     
+    /**
+     * Return the debug array
+     * 
+     * @return array
+     */
     public function debug(){
         return $this->debug;
-    }
-    
-    public function mime($ext){
-        $mime = array(
-            'bmp' => 'image/bmp',
-            'gif' => 'image/gif',
-            'jpeg' => 'image/jpeg',
-            'jpg' => 'image/jpeg',
-            'jpe' => 'image/jpeg',
-            'png' => 'image/png',
-            'tiff' => 'image/tiff',
-            'tif' => 'image/tiff',
-        );
-        return $mime[strtolower($ext)];
     }
 }
 // END Mail Class
