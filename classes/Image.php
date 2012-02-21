@@ -118,6 +118,36 @@ class Image {
     }
     
     /**
+     * Colorize the current picture.
+     * 
+     * @param integer $red
+     * @param integer $green
+     * @param integer $blue
+     * @param integer $alpha 
+     */
+    public function colorize($red = 0, $green = 0, $blue = 0, $alpha = 0){
+        imagefilter($this->image, IMG_FILTER_COLORIZE, $red, $green, $blue, $alpha);
+    }
+    
+    /**
+     * Add brightness to the current picture.
+     * 
+     * @param integer $depth 
+     */
+    public function brightness($depth){
+        imagefilter($this->image, IMG_FILTER_BRIGHTNESS, $depth);
+    }
+    
+    /**
+     * Add contrast to the current picture.
+     * 
+     * @param integer $depth 
+     */
+    public function contrast($depth){
+        imagefilter($this->image, IMG_FILTER_CONTRAST, $depth);
+    }
+    
+    /**
      * Convert to negative the current picture.
      */
     public function negative(){
@@ -136,7 +166,47 @@ class Image {
      */
     public function sepia(){
         imagefilter($this->image, IMG_FILTER_GRAYSCALE);
-        imagefilter($this->image, IMG_FILTER_COLORIZE, 100, 50, 0);
+        $this->colorize(100, 50);
+    }
+    
+    /**
+     * Adds blur to the current picture.
+     */
+    public function blur(){
+        imagefilter($this->image, IMG_FILTER_SELECTIVE_BLUR);
+    }
+    
+    /**
+     * Adds a gausian blur to the current picture.
+     */
+    public function gausian(){
+        imagefilter($this->image, IMG_FILTER_GAUSSIAN_BLUR);
+    }
+        
+    /**
+     * Pixelates the current picture.
+     * 
+     * @param integer $size 
+     */
+    public function pixelate($size = 1){
+        imagefilter($this->image, IMG_FILTER_PIXELATE, $size, true);
+    }
+    
+    /**
+     * Create crop of the current image.
+     * 
+     * @param integer $width
+     * @param integer $height
+     * @param integer $x
+     * @param integer $y 
+     */
+    public function crop($width, $height, $x = 0, $y = 0){        
+        // Create temporal image
+        $temp_image = imagecreatetruecolor($width, $height);
+
+        // Copy resized image to temporal
+        imagecopyresampled($temp_image, $this->image, 0, 0, $x, $y, $width, $height, $width, $height);
+        $this->image = $temp_image;
     }
         
     /**
@@ -145,6 +215,7 @@ class Image {
      * @param integer $size 
      */
     public function thumb($size){
+        // Obtain image sizes
         $image_width = imagesx($this->image);
         $image_height = imagesy($this->image);
 
@@ -169,7 +240,7 @@ class Image {
             $thumb_width = $size;
             $thumb_height = $size;
         }
-                
+        
         // Create temporal image
         $temp_image = imagecreatetruecolor($thumb_width, $thumb_height);
 
