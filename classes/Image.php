@@ -193,6 +193,36 @@ class Image {
     }
     
     /**
+     * Add the scatter effect.
+     * 
+     * @param type $size 
+     */
+    public function scatter($size = 1){
+        $image_width = imagesx($this->image);
+        $image_height = imagesy($this->image);
+
+        for ($x = 0; $x < $image_width; ++$x) {
+            for ($y = 0; $y < $image_height; ++$y) {
+                
+                // Generate random positions for the new dots
+                $distx = rand($size * -1, $size);
+                $disty = rand($size * -1, $size);
+
+                // Avoid get out of the image region.
+                if ($x + $distx >= $image_width) continue;
+                if ($x + $distx < 0) continue;
+                if ($y + $disty >= $image_height) continue;
+                if ($y + $disty < 0) continue;
+
+                $oldcol = imagecolorat($this->image, $x, $y);
+                $newcol = imagecolorat($this->image, $x + $distx, $y + $disty);
+                imagesetpixel($this->image, $x, $y, $newcol);
+                imagesetpixel($this->image, $x + $distx, $y + $disty, $oldcol);
+            }
+        }
+    }
+    
+    /**
      * Create crop of the current image.
      * 
      * @param integer $width
