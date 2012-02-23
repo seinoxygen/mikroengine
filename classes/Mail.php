@@ -27,18 +27,17 @@ class Mail {
     
     protected $connection;
     
-    public $server;
-    public $port = 25;
-    public $timeout = 60;
+    private $smtp_server;
+    private $smtp_port = 25;
+    private $smtp_timeout = 60;
+    private $smtp_username;
+    private $smtp_password;
     
     private $newline = "\r\n";
     private $charset = "utf-8";
     
     public $format = "plain";
-    
-    public $username;
-    public $password;
-    
+        
     private $headers;
     
     private $from;
@@ -62,20 +61,29 @@ class Mail {
     public function __construct(){
         $ME = &get_instance();
         $ME->load->library('Mime');
+        $ME->config->load('mail');
+        
         $this->config = $ME->config;
         $this->mime = $ME->mime;
+        
+        $this->initialize($this->config->items());
     }
     
+    /**
+     * Initialize custom configuration.
+     * 
+     * @param array $config 
+     */
     public function initialize($config = array()){
         if(!empty($config)){
-            foreach ($config as $key => $value) {
-                if(!empty($value)){
-                    $this->config->set($key, $value);
+            foreach ($config as $key => $val) {
+                if(!empty($val)){
+                    $this->$key = $val;
                 }
             }
         }
     }
-    
+        
     /**
      * Set the from email
      * 
@@ -160,6 +168,15 @@ class Mail {
     }
     
     /**
+     * Set the message
+     * 
+     * @param string $message 
+     */
+    public function message($message){
+        $this->message = $message;
+    }
+    
+    /**
      * Attachs a file to be send.
      * Returns true if file exists and was attached, false if not.
      * 
@@ -189,14 +206,28 @@ class Mail {
     }
     
     /**
-     * Set the message
+     * Set the mail format.
      * 
-     * @param string $message 
+     * @param string $format 
      */
-    public function message($message){
-        $this->message = $message;
+    public function format($format){
+        $format = strtolower($format);
+        if(in_array($format, array('plain', 'html'))){
+            $this->format = $format;
+        }
     }
     
+    /**
+     * Set the mail priority.
+     * 
+     * @param type $priority 
+     */
+    public function priority($priority){
+        if($priority <= 5 && $priority >= 1){
+            $this->priority = $priority;
+        }
+    }
+        
     /**
      * Set RFC 822 Date
      *
@@ -373,16 +404,16 @@ class Mail {
     public function send(){
         $success = false;
 
-        $this->connection = fsockopen($this->server, $this->port, $errno, $errstr, $this->timeout);
+        $this->connection = fsockopen($this->smtp_server, $this->smtp_port, $errno, $errstr, $this->smtp_timeout);
         $this->response();
         
-        $this->send_command('EHLO '.$this->server);
+        $this->send_command('EHLO '.$this->smtp_server);
 
         $this->send_command('AUTH LOGIN');
         
-        $this->send_command(base64_encode($this->username));
+        $this->send_command(base64_encode($this->smtp_username));
         
-        $this->send_command(base64_encode($this->password));
+        $this->send_command(base64_encode($this->smtp_password));
                 
         if(!empty($this->from)){
             $this->send_command('MAIL FROM: ' . $this->from);
