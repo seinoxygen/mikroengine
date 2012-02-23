@@ -280,6 +280,80 @@ class Image {
     }
     
     /**
+     * Add a watermark picture
+     * 
+     * @param string $filename
+     * @param string $position
+     * @param integer $opacity
+     * @param integer $margin 
+     */
+    public function watermark($filename, $position = 'bottom-right', $opacity = 25, $margin = 0){
+        // Obtain image sizes
+        $image_width = imagesx($this->image);
+        $image_height = imagesy($this->image);
+        
+        if(file_exists($filename)){
+            $overlay = imagecreatefromstring(file_get_contents($filename));;
+        }
+        
+        // Obtain watermark sizes
+        $overlay_width = imagesx($overlay);
+        $overlay_height = imagesy($overlay);
+                
+        // Select predefined positions
+        switch ($position) {
+            case 'top-left':
+                $posx = $margin;
+                $posy = $margin;
+                break;
+            case 'top-center':
+                $posx = floor($image_width/2) - floor($overlay_width/2);
+                $posy = $margin;
+                break;
+            case 'top-right':
+                $posx = $image_width - $overlay_width - $margin;
+                $posy = $margin;
+                break;
+            case 'center-left':
+                $posx = $margin;
+                $posy = floor($image_height/2) - floor($overlay_height/2);
+                break;
+            case 'center':
+                $posx = floor($image_width/2) - floor($overlay_width/2);
+                $posy = floor($image_height/2) - floor($overlay_height/2);
+                break;
+            case 'center-right':
+                $posx = $image_width - $overlay_width - $margin;
+                $posy = floor($image_height/2) - floor($overlay_height/2);
+                break;
+            case 'bottom-left':
+                $posx = $margin;
+                $posy = $image_height - $overlay_height - $margin;
+                break;
+            case 'bottom-center':
+                $posx = floor($image_width/2) - floor($overlay_width/2);
+                $posy = $image_height - $overlay_height - $margin;
+                break;
+            case 'bottom-right':
+                $posx = $image_width - $overlay_width - $margin;
+                $posy = $image_height - $overlay_height - $margin;
+                break;
+        }
+        
+        // Create a temporal image with alpha channel
+        $watermark = imagecreatetruecolor($overlay_width, $overlay_height);
+
+        // Copy the background of the oricinal picture to the temporal image
+        imagecopy($watermark, $this->image, 0, 0, $posx, $posy, $overlay_width, $overlay_height);
+
+        // Copy the overlay picture to the temporal image
+        imagecopy($watermark, $overlay, 0, 0, 0, 0, $overlay_width, $overlay_height);
+        
+        // Overrlay the temporal image on the main picture
+        imagecopymerge($this->image, $watermark, $posx, $posy, 0, 0, $overlay_width, $overlay_height, $opacity);
+    }
+    
+    /**
      * Clear the current image
      */
     public function clear(){
