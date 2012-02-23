@@ -1,21 +1,16 @@
 <?php
 
-// Total items.
-$config['pag_items'] = 275;
+// How many items per page.
+$config['item_limit'] = 20;
 
-// Items per page.
-$config['pag_limit'] = 20;
+// Links to show in the pagination
+$config['page_links'] = 10;
 
-// Current page.
-$config['pag_current'] = 1;
+// Ellipsis to show between links
+$config['ellipsis'] =  '<span>...</span>'; 
 
-// Total links to show.
-$config['pag_links'] = 5;
+// The main wrapper that will contain all links
+$config['main_wrapper'] = array('<div class="pagination">', '</div>');
 
-$config['pag_url'] = '';
-
-$config['pag_dots'] = '<span>...</span>';
-
-$config['pag_wrapper'] = array('<div class="pagination">', '</div>');
-
-$config['pag_indicator'] = array('<b>', '</b>');
+// Current page wrapper
+$config['current_wrapper'] = array('<b>', '</b>');
