@@ -25,6 +25,23 @@
 
 class Text {
     
+    /**
+     * Add ellipsis to a string if its too long.
+     * 
+     * @param string $text
+     * @param integer $length
+     * @return string 
+     */
+    public function ellipsize($text, $length){
+        if (strlen($text) > $length) {
+            $pos = strrpos($text, ' ');
+            if ($pos !== false) {
+                $text = substr($text, 0, $pos) . '&hellip;';                
+            }
+        }
+        return $text;
+    }
+    
 }
 // END Text Class
 
