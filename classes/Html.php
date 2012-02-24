@@ -25,6 +25,13 @@
 
 class Html {
     
+    /**
+     * Return a heading tag.
+     * 
+     * @param string $string
+     * @param integer $size
+     * @return string 
+     */
     public function heading($string, $size = 1){
         $sizes = array(1,2,3,4,5,6);
         if(!in_array($size, $sizes)){return;}
