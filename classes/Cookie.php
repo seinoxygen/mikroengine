@@ -22,25 +22,42 @@
 // ------------------------------------------------------------------------
 
 class Cookie {
-    
-    public function __construct(){
-
-    }
-    
+        
+    /**
+     * Get cookie value.
+     * 
+     * @param string $name
+     * @return string 
+     */
     public function get($name){
         return $_COOKIE[$name];
     }
     
+    /**
+     * Set cookie.
+     * 
+     * @param string $name
+     * @param string $value
+     * @param integer $expire
+     * @param string $path
+     * @param string $domain
+     * @param boolean $secure
+     * @param boolean $http
+     * @return boolean 
+     */
     public function set($name, $value, $expire = null, $path = null, $domain = null, $secure = null, $http = null){
-        
         $expire = $expire > 0 ? $expire + time() : 0;
-        
+
         return setcookie($name, $value, $expire, $path, $domain, $secure, $http);
     }
     
+    /**
+     * Destroy cookie.
+     * 
+     * @param type $name 
+     */
     public function delete($name){
-        unset($_COOKIE[$name]);
-        
+        unset($_COOKIE[$name]);  
     }
     
 }
