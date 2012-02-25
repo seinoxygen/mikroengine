@@ -30,12 +30,16 @@ class Agent {
     public $platforms;
     public $browsers;
     public $mobiles;
+    public $bots;
     
     public $platform;
     public $browser;
     public $version;
+    public $mobile;
+    public $bot;
     
     public $is_mobile = false;
+    public $is_bot = false;
     
     public function __construct() {
         $ME = &get_instance();
@@ -43,7 +47,7 @@ class Agent {
         $this->initialize($config);
         
         $this->userAgent = $_SERVER['HTTP_USER_AGENT'];
-        $this->analize($this->userAgent);
+        $this->analyze($this->userAgent);
     }
     
     /**
@@ -66,13 +70,17 @@ class Agent {
      * 
      * @param string $user_agent 
      */
-    public function analize($user_agent){
+    public function analyze($user_agent){
         $user_agent = strtolower($user_agent);
         // Reset values on each call.
         $this->platform = 'Unknown Platform';
         $this->browser = 'Unknown Browser';
-        $this->version = null;
+        $this->mobile = 'Unknown Mobile Browser';
+        $this->bot = 'Unknown Bot';
+        $this->version = '';
+        
         $this->is_mobile = false;
+        $this->is_bot = false;
         
         // Check for platforms.
         foreach ($this->platforms as $key => $val) {
@@ -95,8 +103,17 @@ class Agent {
         foreach ($this->mobiles as $key => $val) {
             if (preg_match("/" . preg_quote($key) . ".*?([0-9\.]+)/i", $user_agent, $match)){
                 $this->is_mobile = true;
-                $this->browser = $val;
+                $this->mobile = $val;
                 $this->version = $match[1];
+                break;
+            }
+        }
+        
+        // Check if its a bot.
+        foreach ($this->bots as $val) {
+            if (preg_match("/" . preg_quote($val) . "/i", $user_agent)){
+                $this->is_bot = true;
+                $this->bot = $val;
                 break;
             }
         }
@@ -136,7 +153,7 @@ class Agent {
      */
     public function is_browser($browser = null){
         if(is_null($browser)){
-            return !$this->is_mobile;
+            return (!$this->is_mobile && !$this->is_bot);
         }
         
         if(!empty($browser)){
@@ -185,10 +202,7 @@ class Agent {
      * @return string 
      */
     public function mobile(){
-        if($this->is_mobile){
-           return $this->browser; 
-        }
-        return 'Unknown Mobile Browser';
+        return $this->mobile; 
     }
     
     /**
@@ -198,6 +212,36 @@ class Agent {
      */
     public function version(){
         return $this->version;
+    }
+    
+    /**
+     * Check if the bot corresponds to the curretn crawler.
+     * 
+     * @param string $bot
+     * @return boolean 
+     */
+    public function is_bot($bot = null){
+        if(is_null($bot)){
+            return $this->is_bot;
+        }
+        
+        if(!empty($bot)){
+            $bot = strtolower($bot);
+            if(in_array($bot, $this->bots)){
+                $bot = $this->bots[$bot];
+            }
+            return (bool) preg_match("/" . $bot . "/i", $this->userAgent);
+        }
+        return false;
+    }
+    
+    /**
+     * Return the bot name.
+     * 
+     * @return type 
+     */
+    public function bot(){
+        return $this->bot;
     }
     
     /**
