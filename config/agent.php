@@ -72,7 +72,7 @@ $config['browsers'] = array(
     'ibrowse' => 'IBrowse'
 );
 
-$config['mobile'] = array(
+$config['mobiles'] = array(
     'android' => 'Android',
     'blackberry' => 'BlackBerry',
     'blazer' => 'Blazer',
