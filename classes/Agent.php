@@ -27,9 +27,15 @@ class Agent {
     
     public $userAgent;
     
-    var $platforms;
-    var $browsers;
-    var $mobile;
+    public $platforms;
+    public $browsers;
+    public $mobiles;
+    
+    public $platform;
+    public $browser;
+    public $version;
+    
+    public $is_mobile = false;
     
     public function __construct() {
         $ME = &get_instance();
@@ -37,6 +43,7 @@ class Agent {
         $this->initialize($config);
         
         $this->userAgent = $_SERVER['HTTP_USER_AGENT'];
+        $this->analize($this->userAgent);
     }
     
     /**
@@ -55,6 +62,47 @@ class Agent {
     }
     
     /**
+     * Analyse the user agent string if its provided.
+     * 
+     * @param string $user_agent 
+     */
+    public function analize($user_agent){
+        $user_agent = strtolower($user_agent);
+        // Reset values on each call.
+        $this->platform = 'Unknown Platform';
+        $this->browser = 'Unknown Browser';
+        $this->version = null;
+        $this->is_mobile = false;
+        
+        // Check for platforms.
+        foreach ($this->platforms as $key => $val) {
+            if (preg_match("/" . preg_quote($key) . "/i", $user_agent)){
+                $this->platform = $val;
+                break;
+            }
+        }
+        
+        // Check for browsers first.
+        foreach ($this->browsers as $key => $val) {
+            if (preg_match("/" . preg_quote($key) . ".*?([0-9\.]+)/i", $user_agent, $match)){
+                $this->browser = $val;
+                $this->version = $match[1];
+                break;
+            }
+        }
+        
+        // Then check for mobiles.
+        foreach ($this->mobiles as $key => $val) {
+            if (preg_match("/" . preg_quote($key) . ".*?([0-9\.]+)/i", $user_agent, $match)){
+                $this->is_mobile = true;
+                $this->browser = $val;
+                $this->version = $match[1];
+                break;
+            }
+        }
+    }
+    
+    /**
      * Check if the user is using the provided platform.
      * 
      * @param string $platform
@@ -62,8 +110,9 @@ class Agent {
      */
     public function is_platform($platform){
         if(!empty($platform)){
+            $platform = strtolower($platform);
             if(in_array($platform, $this->platforms)){
-                $platform = $this->platforms[strtolower($platform)];
+                $platform = $this->platforms[$platform];
             }
             return (bool) preg_match("/" . $platform . "/i", $this->userAgent);
         }
@@ -76,12 +125,7 @@ class Agent {
      * @return string 
      */
     public function platform(){
-        foreach ($this->platforms as $key => $val) {
-            if (preg_match("/" . preg_quote($key) . "/i", $this->userAgent)){
-                return $val;
-            }
-        }
-        return 'Unknown Platform';
+        return $this->platform;
     }
     
     /**
@@ -90,10 +134,15 @@ class Agent {
      * @param string $platform
      * @return boolean 
      */
-    public function is_browser($browser){
+    public function is_browser($browser = null){
+        if(is_null($browser)){
+            return !$this->is_mobile;
+        }
+        
         if(!empty($browser)){
+            $browser = strtolower($browser);
             if(in_array($browser, $this->browsers)){
-                $browser = $this->browsers[strtolower($browser)];
+                $browser = $this->browsers[$browser];
             }
             return (bool) preg_match("/" . $browser . "/i", $this->userAgent);
         }
@@ -106,12 +155,7 @@ class Agent {
      * @return string 
      */
     public function browser(){
-        foreach ($this->browsers as $key => $val) {
-            if (preg_match("/" . preg_quote($key) . "/i", $this->userAgent)){
-                return $val;
-            }
-        }
-        return 'Unknown Browser';
+        return $this->browser;
     }
     
     /**
@@ -120,10 +164,15 @@ class Agent {
      * @param string $platform
      * @return boolean 
      */
-    public function is_mobile($browser){
+    public function is_mobile($browser = null){
+        if(is_null($browser)){
+            return $this->is_mobile;
+        }
+        
         if(!empty($browser)){
-            if(in_array($browser, $this->mobile)){
-                $browser = $this->mobile[strtolower($browser)];
+            $browser = strtolower($browser);
+            if(in_array($browser, $this->mobiles)){
+                $browser = $this->mobiles[$browser];
             }
             return (bool) preg_match("/" . $browser . "/i", $this->userAgent);
         }
@@ -136,12 +185,19 @@ class Agent {
      * @return string 
      */
     public function mobile(){
-        foreach ($this->mobile as $key => $val) {
-            if (preg_match("/" . preg_quote($key) . "/i", $this->userAgent)){
-                return $val;
-            }
+        if($this->is_mobile){
+           return $this->browser; 
         }
         return 'Unknown Mobile Browser';
+    }
+    
+    /**
+     * Return browser version.
+     * 
+     * @return string 
+     */
+    public function version(){
+        return $this->version;
     }
     
     /**
