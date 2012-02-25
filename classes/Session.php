@@ -29,6 +29,7 @@ class Session {
     
     private $config;
     
+    private $use_database = false;
     private $table = null;
     private $database;
 
@@ -41,8 +42,12 @@ class Session {
         session_cache_limiter('must-revalidate');
         session_cache_expire($life / 60);
         
-        $this->table = $this->config->get('sess_database');
-        if(!is_null($this->table)){
+        if($this->config->get('sess_table') && $this->config->get('db_enable')){
+            $this->table = $this->config->get('sess_table');
+            $this->use_database = true;
+        }
+        
+        if($this->use_database === true){
             if(!isset($ME->database)){
                 $ME->load->library('database');
             }
@@ -71,7 +76,7 @@ class Session {
      * @param type $val
      */
     public function set($key, $val){
-        if(!is_null($this->table)){
+        if($this->use_database === true){
             $data = $this->database->select('data')->from($this->table)->where('id', $this->sid)->value();
             
             // If there's a ", ', :, or ; in any of the array values the serialization gets corrupted thats why we use base64.
@@ -109,10 +114,10 @@ class Session {
      * @return type
      */
     public function get($key){
-        if(!is_null($this->table)){
+        if($this->use_database === true){
             $data = $this->database->select('data')->from($this->table)->where('id', $this->sid)->value();
             $data = unserialize(base64_decode($data));
-            return (!empty($data[$key])) ? $data[$key] : '';;
+            return (!empty($data[$key])) ? $data[$key] : '';
         }
         return (!empty($_SESSION[$key])) ? $_SESSION[$key] : '';
     }
@@ -123,7 +128,7 @@ class Session {
      * @param string $key
      */
     public function remove($key){
-        if(!is_null($this->table)){
+        if($this->use_database === true){
             $this->set($key, null);
         }
         unset($_SESSION[$key]);
@@ -133,7 +138,7 @@ class Session {
      * Destroy session values.
      */
     public function destroy(){
-        if(!is_null($this->table)){
+        if($this->use_database === true){
             $this->database->where('id', $this->sid);
             $this->database->delete($this->table);
         }
