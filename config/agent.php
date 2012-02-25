@@ -2,7 +2,7 @@
 
 $config['platforms'] = array(
     // Windows
-    'Windows NT 6.1' => 'Windows Seven',
+    'windows nt 6.1' => 'Windows Seven',
     'windows nt 6.0' => 'Windows Vista',
     'windows nt 5.2' => 'Windows 2003',
     'windows nt 5.0' => 'Windows 2000',
