@@ -28,6 +28,7 @@ class Security {
     private $input;
     private $config;
     private $session;
+    private $uri;
     private $image;
 
     public function __construct(){
@@ -37,9 +38,11 @@ class Security {
         $this->config->load('security');
 
         $this->input = $ME->input;
-
+        
         $ME->load->library('session');
         $this->session = $ME->session;
+        
+        $this->uri = $ME->uri;
 
         $ME->load->library('image');
         $this->image = $ME->image;
