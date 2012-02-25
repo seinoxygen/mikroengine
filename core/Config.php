@@ -2,7 +2,7 @@
 
 /**
  * @package		Mikroengine
- * @author		Mikrobytes Dev Team
+ * @author		Keovi Dev Team
  * @copyright           Copyright (c) 2011 - 2011, Mikrobytes.
  * @license
  * @link
@@ -17,7 +17,7 @@
  * @package		Mikroengine
  * @subpackage          Libraries
  * @category            Config
- * @author		Mikrobytes Dev Team
+ * @author		Keovi Dev Team
  */
 // ------------------------------------------------------------------------
 
@@ -25,22 +25,22 @@ class Config {
 
     private $confs = array();
 
-    public function __construct(){
-
-    }
-
     /**
      * Load configurations from a file.
      *
      * @param string $file
      * @return type
      */
-    public function load($file){
+    public function load($file, $return = false){
         $file = BASEPATH.'config/'.$file.'.php';
         if(!file_exists($file)) return;
         include_once $file;
         
         if(!isset($config)) return;
+        
+        if($return === true){
+            return $config;
+        }
         
         if(is_array($config)){
             $this->confs = array_merge($this->confs, $config);
