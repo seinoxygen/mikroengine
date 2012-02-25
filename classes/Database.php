@@ -62,10 +62,6 @@ class Database {
         $this->pdo = null;
     }
 
-    public function __sleep(){
-
-    }
-
     public function __wakeup(){
         $this->connect();
     }
