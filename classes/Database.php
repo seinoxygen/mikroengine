@@ -40,6 +40,7 @@ class Database {
     private $or_like;
     private $or_not_like;
     private $join;
+    private $limit;
     private $group;
     private $order;
 
@@ -356,7 +357,12 @@ class Database {
             $order = "ORDER BY ".implode(", ", $this->order);
         }
 
+        // Set the offset and limit.
         $limit_sql = "";
+        if(!empty($this->limit)){
+            $limit_sql = $this->limit;
+        }
+        
         if(!empty($offset) && !empty($limit)){
             $offset = intval($offset);
             $limit = intval($limit);
@@ -672,6 +678,20 @@ class Database {
         $this->join[] = "$method JOIN $table ON $bridge";
         return $this;
     }
+    
+    /**
+     * Set offset and limit.
+     * 
+     * @param integer $offset
+     * @param integer $limit
+     */
+    public function limit($offset, $limit){
+        if(empty($offset) || empty($limit)){
+            return;
+        }
+        $this->limit = "LIMIT $offset, $limit";
+        return $this;
+    }
 
     /**
      * Group by the provided field.
@@ -711,6 +731,7 @@ class Database {
         unset($this->where_not_in);
         unset($this->or_where_not_in);
         unset($this->join);
+        unset($this->limit);
         unset($this->group);
         unset($this->order);
         unset($this->params);
