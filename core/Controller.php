@@ -2,7 +2,7 @@
 
 /**
  * @package		Mikroengine
- * @author		Mikrobytes Dev Team
+ * @author		Keovi Dev Team
  * @copyright           Copyright (c) 2011 - 2011, Mikrobytes.
  * @license
  * @link		http://www.mikroengine.com
@@ -18,13 +18,15 @@
  * @package		Mikroengine
  * @subpackage          Libraries
  * @category            Controller
- * @author		Mikrobytes Dev Team
+ * @author		Keovi Dev Team
  */
 
 // ------------------------------------------------------------------------
 
 class Controller{
 
+    public $rest = false;
+    
     private static $instance;
     
     public function __construct(){
