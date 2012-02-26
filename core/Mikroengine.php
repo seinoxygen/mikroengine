@@ -36,12 +36,20 @@ include_once($RO->get_directory().$RO->get_class().'.php');
 $class = $RO->get_class();
 $method = $RO->get_method();
 
+$args = $RO->get_args();
+
 // Check if class exists.
 if(class_exists($class)){
     $ME = new $class();
 
+    // If its a rest controller reroute the method and clear the arrays.
+    if($ME->rest){
+        $method = $ME->resource;
+        $args = array();
+    }    
+    
     if(method_exists($ME, $method)){
-        call_user_func_array(array(&$ME, $method), $RO->get_args());
+        call_user_func_array(array(&$ME, $method), $args);
     }
     else{
         $EX->display_error();
@@ -49,6 +57,6 @@ if(class_exists($class)){
 }
 
 // Check if the method wasn't called manually.
-if(!headers_sent()){
+if(!headers_sent() && !$ME->rest){
     $ME->output->display();
 }

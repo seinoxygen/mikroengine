@@ -1,6 +1,7 @@
 <?php
 
 require BASEPATH.'core/Controller.php';
+require BASEPATH.'core/Rest.php';
 
 function &get_instance(){
     return Controller::get_instance();
