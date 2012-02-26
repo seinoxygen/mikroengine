@@ -23,13 +23,15 @@
 
 class Rest extends Controller {
     
+    public $rest = true;
+    
     // Config.
     public $format;
-    public $limit_table;
+    public $key;
+    public $table;
     public $table_key;
-    public $key_name;
-    
-    public $rest = true;
+    public $table_limit;
+    public $table_time;
     
     // Data arrays
     private $get;
@@ -38,6 +40,9 @@ class Rest extends Controller {
     public $resource;
     
     private $method;
+    
+    // Max api calls the user can do in one hour.
+    public $limit;
     
     public function __construct() {
         parent::__construct();
@@ -49,13 +54,7 @@ class Rest extends Controller {
         $this->get = array_slice($this->uri->to_assoc(), 1);
         $this->post = $this->input->post();
         
-        $this->method = $this->request_type();
-                
-        $this->resource = $this->method.'_'.$this->uri->segment(2);
-        
-        if(!method_exists($this, $this->resource)){
-            $this->response(array('status' => 404, 'error' => 'Unknown method.'), 404);
-        }
+        $this->process();
     }
     
     /**
@@ -71,6 +70,65 @@ class Rest extends Controller {
                 }
             }
         } 
+    }
+    
+    /**
+     * Start the workflow.
+     */
+    private function process(){
+        // Set the rewuest method.
+        $this->method = $this->request_type();
+                
+        // Set the resource path.
+        $this->resource = $this->method.'_'.$this->uri->segment(2);
+        
+        // If method doesn't exist throw 404 error.
+        if(!method_exists($this, $this->resource)){
+            $this->response(array('status' => 404, 'error' => 'Unknown method.'), 404);
+        }
+        
+        $key = $this->get_api_key();
+        
+        // Check api key.
+        if(!empty($this->table) && !empty($this->table_key)){
+            $count = $this->database->where($this->table_key, $key)->count($this->table);
+            if($count == 0){
+                $this->response(array('status' => 403, 'error' => 'Unknown api key.'), 403);
+            }
+        }
+        
+        // Check limit.
+        if(isset($this->limit) && $this->limit > 0){
+                        
+            $query = $this->database->where($this->table_key, $key)->get($this->table)->row();
+
+            $wait = date('i:s', $query[$this->table_time] - (time() - (60 * 60)));
+            
+            // Time limit reached.
+            $time_limit_reached = ($query[$this->table_time] > time() - (60 * 60)) ? true : false;
+            
+            // Hits limit reached.           
+            $hits_limit_reached = ($query[$this->table_limit] >= $this->limit) ? true : false;
+            
+            if($time_limit_reached && $hits_limit_reached){
+                $this->response(array('status' => 403, 'error' => 'Limit reached.', 'wait' => $wait), 403);
+            }
+            
+            // Reset the counter.
+            $count = 1;
+            
+            if (!$hits_limit_reached) {
+                $count = $query[$this->table_limit] + 1;
+            }
+            
+            // Update the database with the new values.
+            $update = array(
+                $this->table_limit => $count,
+                $this->table_time => time()
+            );
+
+            $this->database->where($this->table_key, $key)->update($update, $this->table);
+        }
     }
     
     /**
@@ -92,7 +150,7 @@ class Rest extends Controller {
      * @return string
      */
     public function get_api_key(){
-        return $this->get_value($this->key_name);
+        return $this->get_value($this->key);
     }
     
     /**
