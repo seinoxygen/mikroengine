@@ -699,7 +699,7 @@ class Database {
      * Clear the sql filters.
      */
     private function clear_data(){
-        unset($this->select);
+        $this->select = '*';
         unset($this->where);
         unset($this->or_where);
         unset($this->like);
