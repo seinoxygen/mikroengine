@@ -1,20 +1,51 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Mikroengine - Controllers</title>
+        <title>Mikroengine - Database</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <link rel="stylesheet" type="text/css" href="style.css" />
     </head>
     <body>
-        <h2>Controllers</h2>
+        <h2>Select Data</h2>
+        <p>Select all data from a table.</p>
         <pre>
-        &lt;?php 
-        class Wellcome extends Controller{
-            public function index(){
-                echo "Wellcome";
-            }
-        }
-        ?&gt;
+        $this->database->from('my_table')->get();
+        </pre>
+        <pre>
+        $this->database->get('my_table');
+        </pre>
+        
+        <p>Select some data from a table.</p>
+        <pre>
+        $this->database->select('column1, column2')->from('my_table')->get();
+        </pre>
+        
+        <h2>Setting Limits</h2>
+        <pre>
+        $this->database->get('my_table', $offset, $limit);
+        </pre>
+        
+        <h2>Filtering Data</h2>
+        <h3>Where</h3>
+        <p>Select some data from a table using where clause.</p>
+        <pre>
+        $this->database->from('my_table')->where('column1', 'value1')->get();
+        </pre>
+        <p>Custom operand.</p>
+        <pre>
+        $this->database->from('my_table')->where('column1', 'value1', '>')->get();
+        </pre>
+        <h3>Or Where</h3>
+        <pre>
+        $this->database->from('my_table')->where('column1', 'value1')->or_where('column2', 'value2')->get();
+        </pre>
+        <h3>Where In</h3>
+        <pre>
+        $this->database->from('my_table')->where_in('column1', array('value1', 'value2'))->get();
+        </pre>
+        <h3>Or Where In</h3>
+        <pre>
+        $this->database->from('my_table')->where_in('column1', array('value1', 'value2'))->or_where_in('column2', array('value3', 'value4'))->get();
         </pre>
     </body>
 </html>
