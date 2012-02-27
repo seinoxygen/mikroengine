@@ -23,8 +23,11 @@
 
 class Url {
         
+    private $uri;
+    
     public function __construct() {
-        
+        $ME = &get_instance();
+        $this->uri = $ME->uri;
     }
 
 
@@ -53,34 +56,15 @@ class Url {
         return $base.'/'.ltrim($segments, '/');
     }
     
-    public function current(){
-        $ME = &get_instance();
-        return $this->site($ME->uri->path());
-    }
-    
     /**
-     * Generate slug titles.
+     * Return current url.
      * 
-     * @param string $string
-     * @param string $separator
-     * @return string 
+     * @return type 
      */
-    public function slug($string, $separator = '-'){
-        $ME = &get_instance();
-        $ME->load->library('Utf8');
-        $string = $ME->utf8->transliterate($string);
-
-        $string = strtolower($string);
-
-        $string = preg_replace("/[^a-z0-9_\s-]/", " ", $string);
-        $string = preg_replace("/[\s-]+/", " ", $string);
-        $string = preg_replace("/[\s_]/", "-", $string);
-        
-        $string = trim($string, '-');
-        
-        return $string;
+    public function current(){
+        return $this->site($this->uri->path());
     }
-    
+        
 }
 // END Url Class
 
