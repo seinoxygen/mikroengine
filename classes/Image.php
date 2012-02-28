@@ -25,6 +25,8 @@ class Image {
     
     private $image;
     
+    private $font;
+    
     /**
      * Create a new image.
      * 
@@ -88,6 +90,168 @@ class Image {
         $this->save(null, $format, null);
     }
     
+    
+    /**
+     * Allocate a color in the picture.
+     * 
+     * @param int $red
+     * @param int $green
+     * @param int $blue
+     * @return resource 
+     */
+    public function color(){
+        $args = func_get_args();
+        if(is_array($args[0])){
+            $red = $args[0][0];
+            $green = $args[0][1];
+            $blue = $args[0][2];
+        }
+        else{
+            $red = $args[0];
+            $green = $args[1];
+            $blue = $args[2];
+        }
+        return imagecolorallocate($this->image, $red, $green, $blue);
+    }
+    
+    /**
+     * Set background color.
+     * 
+     * @param resource $color 
+     */
+    public function background($color){
+        imagefill($this->image, 0, 0, $color);
+    }
+     
+    /**
+     * Draw a line between two points.
+     * 
+     * @param integer $x1
+     * @param integer $y1
+     * @param integer $x2
+     * @param integer $y2
+     * @param resource $color 
+     */
+    public function line($x1, $y1, $x2, $y2, $color){
+        imageline($this->image, $x1, $y1, $x2, $y2, $color);
+    }
+    
+    /**
+     * Draw a rectangle between two points.
+     * 
+     * @param integer $x1
+     * @param integer $y1
+     * @param integer $x2
+     * @param integer $y2
+     * @param resource $color 
+     * @param resource $background 
+     */
+    public function rectangle($x1, $y1, $x2, $y2, $color, $background = null){
+        if(!is_null($background)){
+            imagefilledrectangle($this->image, $x1, $y1, $x2, $y2, $background);
+        }
+        imagerectangle($this->image, $x1, $y1, $x2, $y2, $color);
+    }
+    
+    /**
+     * Draw a poligon with the provided points.
+     * 
+     * @param array $points
+     * @param resource $color 
+     * @param resource $background 
+     */
+    public function poligon($points, $color, $background = null){
+        $num_points = count($points) / 2;
+        if(!is_null($background)){
+            imagefilledpolygon($this->image, $points , $num_points , $background);
+        }
+        imagepolygon($this->image, $points , $num_points , $color);
+    }
+    
+    /**
+     * Draw a circle.
+     * 
+     * @param integer $size
+     * @param integer $x
+     * @param integer $y
+     * @param resource $color
+     * @param resource $background 
+     */
+    public function circle($size, $x, $y, $color, $background = null){
+        $this->elipze($size, $size, $x, $y, $color, $background);
+    }
+    
+    /**
+     * Draw an elipze.
+     * 
+     * @param integer $width
+     * @param integer $height
+     * @param integer $x
+     * @param integer $y
+     * @param resource $color
+     * @param resource $background 
+     */
+    public function elipze($width, $height, $x, $y, $color, $background = null){
+        if(!is_null($background)){
+            imagefilledellipse($this->image, $x, $y, $width, $height, $background); 
+        }
+        imageellipse($this->image, $x, $y, $width, $height, $color);
+    }
+    
+    
+    /**
+     * Draw an arc.
+     * 
+     * @param integer $width
+     * @param integer $height
+     * @param integer $x
+     * @param integer $y
+     * @param integer $start
+     * @param integer $end
+     * @param resource $color
+     * @param resource $background
+     * @param boolean $outline
+     */
+    public function arc($width, $height, $x, $y, $start, $end, $color, $background = null, $outline = false){
+        if(!is_null($background)){
+            imagefilledarc($this->image, $x, $y, $width, $height, $start, $end, $background, IMG_ARC_PIE);
+            if($outline === true){
+                imagefilledarc($this->image, $x, $y, $width, $height, $start, $end, $color, IMG_ARC_EDGED + IMG_ARC_NOFILL);
+                return;
+            }
+        }
+        imagearc($this->image, $x, $y, $width, $height, $start, $end, $color);
+    }
+        
+    /**
+     * Set TTF font to be used with text function.
+     * 
+     * @param string $filename 
+     */
+    public function font($filename){
+        if(file_exists($filename)){
+            $this->font = $filename;
+        }
+    }
+    
+    /**
+     * Write text in the picture.
+     * 
+     * @param string $text
+     * @param float $size
+     * @param resource $color
+     * @param integer $x
+     * @param integer $y
+     * @param float $angle
+     */
+    public function text($text, $size, $color, $x = 0, $y = 0, $angle = 0){
+        if(empty($this->font)){
+            imagestring($this->image, $size, $x, $y, $text, $color);
+            return;
+        }
+        imagettftext($this->image, $size, $angle, $x, $y, $color, $this->font, $text);
+    }
+    
     /**
      * Rotate the image.
      * 
@@ -115,6 +279,10 @@ class Image {
             imagecopyresampled($temp_image, $this->image, 0, 0, 0, ($image_height-1), $image_width, $image_height, $image_width, 0-$image_height);
         }
         $this->image = $temp_image;
+    }
+    
+    public function antialiasing($enabled){
+        imageantialias($this->image, $enabled);
     }
     
     /**
@@ -195,7 +363,7 @@ class Image {
     /**
      * Add the scatter effect.
      * 
-     * @param type $size 
+     * @param integer $size 
      */
     public function scatter($size = 1){
         $image_width = imagesx($this->image);
@@ -367,12 +535,13 @@ class Image {
      * @return array 
      */
     public function hex2rgb($hex){
+        $hex = str_replace('#', '', $hex);
         $rgb = array();
         if (strlen($hex) == 6) {
             $val = hexdec($hex);
-            $rgb['r'] = 0xFF & ($val >> 0x10);
-            $rgb['g'] = 0xFF & ($val >> 0x8);
-            $rgb['b'] = 0xFF & $val;
+            $rgb[0] = 0xFF & ($val >> 0x10);
+            $rgb[1] = 0xFF & ($val >> 0x8);
+            $rgb[2] = 0xFF & $val;
         }
         return $rgb;
     }
