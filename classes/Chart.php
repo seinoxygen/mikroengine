@@ -27,7 +27,7 @@ class Chart {
     
     private $type = 'bars';
     
-    private $margin = 20;
+    private $margin = 25;
     private $steps = 2;
     private $middle_steps;
     private $max, $ratio;
@@ -234,7 +234,9 @@ class Chart {
     
     private function draw_legend(){
         $x = $this->margin;
-        $y = $this->height - $this->margin + 4;
+        $y = $this->height - $this->margin;
+        
+        $legend_padding = 5;
         
         $width = 0;
         foreach ($this->labels as $label) { //compute width
@@ -249,16 +251,18 @@ class Chart {
         $width = $width * imagefontwidth($fontsize);
         $height = imagefontheight($fontsize);
         
-        $this->leyend_height = $height;
-        $this->grid_height -= $height;
+        $this->leyend_height = $height + $legend_padding * 2;
+        $this->grid_height -= $this->leyend_height;
         
         // Recalculate the ratio.
         $this->ratio = $this->grid_height / $this->max;
         
+        $this->image->rectangle($x, $y - $legend_padding, $this->width - $this->margin, $y + $height + $legend_padding, $this->border_color);
+                
         foreach($this->labels as $key => $label){
             $x = $x + $width + 15;
             if($key == 0){
-                $x = $this->margin;
+                $x = $this->margin + $legend_padding * 2;
             }
             
             if(isset($this->graph_color[$key])){
@@ -271,40 +275,45 @@ class Chart {
     }
     
     private function draw_columns() {
-        $this->bar_width = $this->grid_width / $this->pieces - 10;
+        $this->bar_width = $this->grid_width / ($this->pieces * count($this->data)) - 10;
 
         // Draw grid lines.
         $this->draw_grid();
 
-        $margin = ($this->grid_width - $this->pieces * $this->bar_width ) / ($this->pieces + 1);
+        $margin = ($this->grid_width - ($this->pieces * count($this->data)) * $this->bar_width ) / (($this->pieces * count($this->data)) + 1);
 
+        //$this->bar_width = $this->bar_width / 3;
         // Draw the bars.
-        foreach ($this->data as $data) {
-            for ($i = 0; $i < $this->pieces; $i++) {
+        
+        $offset = 0;
+        for ($i = 0; $i < $this->pieces; $i++) {
+            
+            // DRAW group
+            foreach ($this->data as $key => $data) {
                 $value = $data[$i];
-                $label = $this->labels[$i];
-
-                $x1 = $this->margin + $margin + $i * ($margin + $this->bar_width);
+                
+                $x1 = $this->margin + $margin + $offset * ($margin + $this->bar_width);
                 $x2 = $x1 + $this->bar_width;
 
                 $y1 = $this->margin + $this->grid_height - intval($value * $this->ratio);
-                $y2 = $this->height - $this->margin;
+                $y2 = $this->height - $this->margin - $this->leyend_height;
 
-                $bar_color = $this->grid_color;
-                if (!empty($this->colors) && isset($this->colors[$i])) {
-                    $bar_color = $this->image->color($this->image->hex2rgb($this->colors[$i]));
+                $graph_color = $this->image->color($this->image->hex2rgb('#004080'));
+                if (!empty($this->graph_color) && isset($this->graph_color[$key])) {
+                    $graph_color = $this->image->color($this->image->hex2rgb($this->graph_color[$key]));
                 }
 
                 // Add values over rows.
                 $this->image->text($value, 0, $this->text_color, $x1 + 3, $y1 - 10);
 
-                // Add vertical legend.
-                $this->image->text($label, 0, $this->text_color, $x1 + 3, $this->height - 15);
-
                 // Add the bar.
-                $this->image->rectangle($x1, $y1, $x2, $y2, $bar_color, $bar_color);
+                $this->image->rectangle($x1, $y1, $x2, $y2, $graph_color, $graph_color);
+                $offset++;
             }
+            
         }
+        
+
     }
     
     private function draw_lines() {
