@@ -282,13 +282,11 @@ class Chart {
 
         $margin = ($this->grid_width - ($this->pieces * count($this->data)) * $this->bar_width ) / (($this->pieces * count($this->data)) + 1);
 
-        //$this->bar_width = $this->bar_width / 3;
         // Draw the bars.
-        
         $offset = 0;
         for ($i = 0; $i < $this->pieces; $i++) {
             
-            // DRAW group
+            // Draw the groups
             foreach ($this->data as $key => $data) {
                 $value = $data[$i];
                 
@@ -298,6 +296,7 @@ class Chart {
                 $y1 = $this->margin + $this->grid_height - intval($value * $this->ratio);
                 $y2 = $this->height - $this->margin - $this->leyend_height;
 
+                // Set the color for each bar.
                 $graph_color = $this->image->color($this->image->hex2rgb('#004080'));
                 if (!empty($this->graph_color) && isset($this->graph_color[$key])) {
                     $graph_color = $this->image->color($this->image->hex2rgb($this->graph_color[$key]));
