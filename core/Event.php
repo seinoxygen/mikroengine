@@ -67,11 +67,5 @@ class Event {
 
 // END Event Class
 
-class Listener extends Event {
-    
-}
-
-// END Listener Class
-
 /* End of file Event.php */
 /* Location: Event.php */

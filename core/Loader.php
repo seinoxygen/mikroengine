@@ -50,7 +50,7 @@ class Loader {
         if(!include_once("plugins/".ucfirst($file).".php")) throw new Exception('Plugin file not found.');
         $name = (empty($name)) ? strtolower($file) : $name;
         $ME = &get_instance();
-        $ME->{$name} = new Listener(new $file($args));
+        $ME->{$name} = new Event(new $file($args));
     }
     
     /**
