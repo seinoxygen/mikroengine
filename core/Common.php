@@ -1,7 +1,11 @@
 <?php
 
-require BASEPATH.'core/Controller.php';
-require BASEPATH.'core/Rest.php';
+function __autoload($class){
+    $filename = BASEPATH . 'core/' . $class . '.php';
+    if(file_exists($filename)){
+        include_once($filename);
+    }
+}
 
 function &get_instance(){
     return Controller::get_instance();
