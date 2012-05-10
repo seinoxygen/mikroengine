@@ -36,24 +36,19 @@ class Url {
      * 
      * @return string 
      */
-    public function base(){
+    public function base($segments = ''){
         if (isset($_SERVER['HTTP_HOST'])) {
             $base_url = isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off' ? 'https' : 'http';
             $base_url .= '://' . $_SERVER['HTTP_HOST'];
             $base_url .= str_replace(basename($_SERVER['SCRIPT_NAME']), '', $_SERVER['SCRIPT_NAME']);
         }
+        
+        if(!empty($segments)){
+            $base_url = trim($this->base(), '/');
+            $base_url = $base_url.'/'.ltrim($segments, '/');
+        }
+        
         return $base_url;
-    }
-    
-    /**
-     * Return the site url with the provided uri segments.
-     * 
-     * @param string $segments
-     * @return string 
-     */
-    public function site($segments = ''){
-        $base = trim($this->base(), '/');
-        return $base.'/'.ltrim($segments, '/');
     }
     
     /**

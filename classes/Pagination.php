@@ -82,7 +82,7 @@ class Pagination {
             
         $html = $this->main_wrapper[0];
         
-        $html .= '<a href="'.$this->url->site($url.'/1').'">First</a>';
+        $html .= '<a href="'.$this->url->base($url.'/1').'">First</a>';
         
         // We get the limit of links that we need to build the pagination.
         $start = (($this->current_page - $half) > 0) ? $this->current_page - ($half) : 1;
@@ -100,7 +100,7 @@ class Pagination {
             if ($this->current_page == $i) {
                 $html .= $this->current_wrapper[0] . $i . $this->current_wrapper[1];
             } else {
-                $html .= '<a href="'.$this->url->site($url.'/'.$i).'">'.$i.'</a>';
+                $html .= '<a href="'.$this->url->base($url.'/'.$i).'">'.$i.'</a>';
             }
         }
         
@@ -109,7 +109,7 @@ class Pagination {
             $html .= $this->ellipsis;
         }
         
-        $html .= '<a href="'.$this->url->site($url.'/'.$total_pages).'">Last</a>';
+        $html .= '<a href="'.$this->url->base($url.'/'.$total_pages).'">Last</a>';
         
         $html .= $this->main_wrapper[1];
         

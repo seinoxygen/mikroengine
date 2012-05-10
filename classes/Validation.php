@@ -280,18 +280,6 @@ class Validation {
         }
         return (bool) ($str == $_POST[$field]);
     }
-    
-    /**
-     * Check if a number is between the max and the min provided.
-     * @param type $str
-     * @param type $len
-     * @return type 
-     */
-    public function between($str, $len){
-        $parts = explode('|',$len);
-        $this->messages[$this->field] = (!empty($this->messages[$this->field])) ? $this->messages[$this->field] : sprintf("The %s field must be between %s and %s.", $this->label, $parts[0], $parts[1]);
-        return (bool) ($str >= $parts[0] && $str <= $parts[1]);
-    }
 
     /**
      * Check if the captcha code is valid.
@@ -309,11 +297,6 @@ class Validation {
         return (bool) ($ME->session->get('captcha') == md5($str));
     }
 
-    /**
-     * Validate for csrf field.
-     * @param string $str
-     * @return boolean 
-     */
     public function csrf($str){
         $this->messages[$this->field] = (!empty($this->messages[$this->field])) ? $this->messages[$this->field] : sprintf("The csrf token is not valid.");
         $ME = &get_instance();
