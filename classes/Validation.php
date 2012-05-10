@@ -87,7 +87,7 @@ class Validation {
      *
      * @return boolean
      */
-    public function run(){
+    public function check(){
         $submited = false;
         $ME = &get_instance();
         foreach ($this->rules as $rule) {
