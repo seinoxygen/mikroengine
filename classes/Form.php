@@ -25,14 +25,17 @@
 
 class Form {
 
+    private $url;
     private $config;
     private $security;
 
     public function __construct(){
         $ME = &get_instance();
+        $ME->load->library('url');
         $ME->load->library('security');
         $this->security = $ME->security;
         $this->config = $ME->config;
+        $this->url = $ME->url;
     }
 
 
@@ -47,7 +50,7 @@ class Form {
     public function open($action, $method = 'post', $properties = array()){
         $html = '';
         $html .= '<form ';
-        $html .= 'action="'.$action.'" ';
+        $html .= 'action="'.$this->url->base($action).'" ';
         $html .= 'method="'.$method.'" ';
         foreach($properties as $key => $value){
             $html .= $key.'="'.$value.'" ';
