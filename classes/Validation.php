@@ -297,6 +297,11 @@ class Validation {
         return (bool) ($ME->session->get('captcha') == md5($str));
     }
 
+    /**
+     * Validate csrf token.
+     * @param string $str
+     * @return type 
+     */
     public function csrf($str){
         $this->messages[$this->field] = (!empty($this->messages[$this->field])) ? $this->messages[$this->field] : sprintf("The csrf token is not valid.");
         $ME = &get_instance();
@@ -312,6 +317,35 @@ class Validation {
     public function uuid($str){
         $this->messages[$this->field] = (!empty($this->messages[$this->field])) ? $this->messages[$this->field] : sprintf("The %s field may only contain a valid uuid.", $this->label);
         return (bool) preg_match("/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}+$/i", $str);
+    }
+    
+    /**
+     * Validate credit cards.
+     * @param string $str
+     * @param string $type
+     * @return boolean 
+     */
+    public function creditcard($str, $type){
+        $this->messages[$this->field] = (!empty($this->messages[$this->field])) ? $this->messages[$this->field] : sprintf("The %s field must be a valid credit card number.", $this->label);
+        $str = str_replace(array('-', ' '), '', $str);
+ 	if (strlen($str) < 13) {
+            return false;
+ 	}
+        $cards = array(
+            'amex' => '/^3[4|7]\\d{13}+$/i',
+            'visa' => '/^4\\d{12}(\\d{3})?+$/i',
+            'diners' => '/^(?:3(0[0-5]|[68]\\d)\\d{11})|(?:5[1-5]\\d{14})+$/i',
+        );
+        if(isset($cards[$type])){
+            return (bool) preg_match($cards[$type], $str);
+        }
+        
+        $return = false;
+        foreach($cards as $check){
+            if(preg_match($check, $str) === true){
+                $return = true;
+            }
+        }
     }
 
     /**
